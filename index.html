@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		* {
+			/* font-family: 'Inter Var', 'Inter'; */
+			font-family: 'JetBrains Mono';
+			font-size: 64pt;
+			color: #ff1040;
+		}
+
+		body {
+			padding: 64px;
+		}
+
+		html,
+		body {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background-color: #000000c0;
+			margin: 0px;
+			border-radius: 8px;
+			width: 100vw;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+		#clock>span {
+			color: #fff;
+			/* text-align: center;
+			display: inline-block;
+			width: 120pt; */
+		}
+	</style>
+</head>
+
+<body>
+	<div id="clock">
+		<span id="hours"></span>:<span id="minutes"></span>:<span id="seconds"></span>
+	</div>
+</body>
+
+<script>
+
+	const hoursSpan = document.getElementById('hours');
+	const minutesSpan = document.getElementById('minutes');
+	const secondsSpan = document.getElementById('seconds');
+
+	/** @type {number} */
+	let hours;
+	/** @type {number} */
+	let minutes;
+	/** @type {number} */
+	let seconds;
+
+	let start = Date.now();
+
+	{
+		let usp = new URLSearchParams(window.location.search);
+		hours = parseInt(usp.get("h")) || 0;
+		minutes = parseInt(usp.get("m")) || 0;
+		seconds = parseInt(usp.get("s")) || 0;
+	}
+
+	console.log("hours =", hours);
+	console.log("minutes =", minutes);
+	console.log("seconds =", seconds);
+
+	let end = start + (hours / 1000 / 60 / 60)
+		+ (minutes / 1000 / 60)
+		+ (seconds / 1000);
+
+	function updateClock() {
+		let delta = (Date.now() - end);
+		hoursSpan.innerText = (hours - Math.floor(delta / 1000 / 60 / 60)).toString().padStart(2, '0');
+		minutesSpan.innerText = ((minutes - Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
+		secondsSpan.innerText = ((seconds - Math.floor(10 * delta / 1000) / 10) % 60).toFixed(1);
+	}
+
+	setInterval(updateClock, 1000 / 500);
+	updateClock();
+
+
+</script>
+
+</html>
