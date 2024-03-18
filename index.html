@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Timer</title>
 	<style>
 		* {
 			/* font-family: 'Inter Var', 'Inter'; */
@@ -36,6 +36,13 @@
 			display: inline-block;
 			width: 120pt; */
 		}
+
+		/* #clock.elapsed>span {
+			color: #10ff40;
+		} */
+		#clock.elapsed {
+			color: #10ff40;
+		}
 	</style>
 </head>
 
@@ -50,6 +57,7 @@
 	const hoursSpan = document.getElementById('hours');
 	const minutesSpan = document.getElementById('minutes');
 	const secondsSpan = document.getElementById('seconds');
+	const clockDiv = document.getElementById('clock');
 
 	/** @type {number} */
 	let hours;
@@ -71,18 +79,24 @@
 	console.log("minutes =", minutes);
 	console.log("seconds =", seconds);
 
-	let end = start + (hours / 1000 / 60 / 60)
-		+ (minutes / 1000 / 60)
-		+ (seconds / 1000);
+	let duration = (hours * 1000 * 60 * 60)
+		+ (minutes * 1000 * 60)
+		+ (seconds * 1000);
+	let end = start + duration;
+
+	let interval = setInterval(updateClock, 1000 / 500);
 
 	function updateClock() {
-		let delta = (Date.now() - end);
-		hoursSpan.innerText = (hours - Math.floor(delta / 1000 / 60 / 60)).toString().padStart(2, '0');
-		minutesSpan.innerText = ((minutes - Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
-		secondsSpan.innerText = ((seconds - Math.floor(10 * delta / 1000) / 10) % 60).toFixed(1);
+		let delta = end - Date.now();
+		hoursSpan.innerText = Math.max(0, (Math.floor(delta / 1000 / 60 / 60))).toString().padStart(2, '0');
+		minutesSpan.innerText = Math.max(0, (Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
+		secondsSpan.innerText = Math.max(0, (Math.floor(10 * delta / 1000) / 10) % 60).toFixed(1).padStart(4, '0');
+		if (Date.now() > end) {
+			clearInterval(interval);
+			clockDiv.classList.add("elapsed");
+		}
 	}
 
-	setInterval(updateClock, 1000 / 500);
 	updateClock();
 
 
