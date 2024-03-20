@@ -5,13 +5,28 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Timer</title>
+	<link rel="preload" as="font" href="fonts/InterVariable.woff2">
+	<link rel="preload" as="style" href="fonts/inter.css">
+	<link rel="stylesheet" href="fonts/inter.css">
 	<style>
+		@font-face {
+			font-family: "Inter Var";
+			font-style: normal;
+			font-weight: 100 900;
+			font-display: swap;
+			src: url("fonts/InterVariable.woff2") format("woff2");
+		}
+
+		@font-face {
+			font-family: "Inter Var";
+			font-style: italic;
+			font-weight: 100 900;
+			font-display: swap;
+			src: url("fonts/InterVariable-Italic.woff2") format("woff2");
+		}
+
 		* {
 			box-sizing: border-box;
-			/* font-family: 'Inter Var', 'Inter'; */
-			font-family: 'JetBrains Mono';
-			font-size: 64pt;
-			color: #ff1040;
 		}
 
 		html {
@@ -26,12 +41,25 @@
 			margin: 0px;
 			width: 100%;
 			height: 100%;
-			border-radius: 128px;
 			overflow: hidden;
 			background-color: transparent;
+			color: #fff;
+			font-weight: 500;
+			font-size: 32pt;
+			font-family: monospace;
+			font-optical-sizing: auto;
 		}
 
-		main {
+		@supports (font-variation-settings: normal) {
+			body {
+				font-family: "Inter Var", monospace;
+				font-feature-settings: "tnum";
+			}
+		}
+
+		#clock {
+			border-radius: 32px;
+			overflow: hidden;
 			display: flex;
 			justify-content: center;
 			align-items: center;
@@ -39,37 +67,80 @@
 			width: 100%;
 			height: 100%;
 			background-color: #000000c0;
+			/* animation: 2s ease-in-out bg-pulse 0.5s infinite alternate; */
 		}
 
-		#clock>span {
-			color: #fff;
-			/* text-align: center;
-			display: inline-block;
-			width: 120pt; */
-		}
-
-		/* #clock.elapsed>span {
-			color: #10ff40;
+		/* @keyframes bg-pulse {
+			to {
+				background-color: #000000a0;
+			}
 		} */
-		#clock.elapsed {
+
+		@keyframes elapsed-pulse {
+			0% {
+				transform: scale(100%, 100%);
+			}
+
+			25% {
+				transform: scale(125%, 125%);
+			}
+
+			100% {
+				transform: scale(100%, 100%);
+			}
+		}
+
+		.separator::before {
+			content: ":";
+			color: #ff1040;
+		}
+
+		#seconds-frac {
+			color: #a0a0a0
+		}
+
+		#clock.elapsed .separator::before {
 			color: #10ff40;
+		}
+
+		#clock.elapsed #timer {
+			animation: 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) elapsed-pulse infinite;
 		}
 	</style>
 </head>
 
 <body>
-	<main>
-		<div id="clock">
-			<span id="hours"></span>:<span id="minutes"></span>:<span id="seconds"></span>
-		</div>
-	</main>
+	<div id="clock">
+		<p id="timer"><span id="hours">00</span><span class="separator"></span><span id="minutes">00</span><span
+				class="separator"></span><span id="seconds">00</span><span id="seconds-frac">.00</span></p>
+	</div>
 </body>
 
 <script>
+	const usp = new URLSearchParams(window.location.search);
+
+	const NONE = 0,
+		READ_OBS = 1,
+		READ_USER = 2,
+		BASIC = 3,
+		ADVANCED = 4,
+		ALL = 5;
+
+	let level = NONE;
+	let destScene = usp.get("scene");
+
+	async function setupObs() {
+		level = await new Promise((resolve, reject) => window.obsstudio.getControlLevel(l => resolve(l)));
+		if (level >= ADVANCED) console.log(`Running in OBS with permission level ${level}`);
+		else console.log(`Running in OBS, but not enough permissions to write (level = ${level})`);
+	}
+
+	if (window.hasOwnProperty("obsstudio")) setupObs(); else console.warn("Not running in OBS, some parameters won't work");
 
 	const hoursSpan = document.getElementById('hours');
 	const minutesSpan = document.getElementById('minutes');
 	const secondsSpan = document.getElementById('seconds');
+	const secondsFracSpan = document.getElementById('seconds-frac');
 	const clockDiv = document.getElementById('clock');
 
 	/** @type {number} */
@@ -82,10 +153,29 @@
 	let start = Date.now();
 
 	{
-		let usp = new URLSearchParams(window.location.search);
-		hours = parseInt(usp.get("h")) || 0;
-		minutes = parseInt(usp.get("m")) || 0;
-		seconds = parseInt(usp.get("s")) || 0;
+		let h = usp.get("h")
+		let m = usp.get("m")
+		let s = usp.get("s");
+		hours = parseFloat(h);
+		minutes = parseFloat(m);
+		seconds = parseFloat(s);
+
+		if (isNaN(hours) && h) {
+			console.error("Time format for hours is invalid, replacing with 0", h)
+		}
+		hours = hours || 0;
+
+		if (isNaN(minutes) && m) {
+			console.error("Time format for minutes is invalid, replacing with 0", m)
+		}
+		minutes = minutes || 0;
+
+		if (isNaN(seconds) && s) {
+			console.error("Time format for seconds is invalid, replacing with 0", s)
+		}
+		seconds = seconds || 0;
+
+		if (!h && !m && !s) console.error("No time parameters entered! Use search queries h, m, and s.")
 	}
 
 	console.log("hours =", hours);
@@ -100,13 +190,27 @@
 	let interval = setInterval(updateClock, 1000 / 500);
 
 	function updateClock() {
-		let delta = end - Date.now();
-		hoursSpan.innerText = Math.max(0, (Math.floor(delta / 1000 / 60 / 60))).toString().padStart(2, '0');
-		minutesSpan.innerText = Math.max(0, (Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
-		secondsSpan.innerText = Math.max(0, (Math.floor(10 * delta / 1000) / 10) % 60).toFixed(1).padStart(4, '0');
-		if (Date.now() > end) {
+		let now = Date.now()
+		let delta = end - now;
+		let hPart = Math.max(0, (Math.floor(delta / 1000 / 60 / 60))).toString().padStart(2, '0');
+		let mPart = Math.max(0, (Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
+		let secPart = Math.max(0, (delta / 1000) % 60).toFixed(2).padStart(5, '0').split('.');
+
+		minutesSpan.innerText = mPart;
+		hoursSpan.innerText = hPart;
+		secondsSpan.innerText = secPart[0];
+		secondsFracSpan.innerText = '.' + secPart[1];
+		if (now > end) {
 			clearInterval(interval);
 			clockDiv.classList.add("elapsed");
+
+			// OBS can actually hook into window titles externally, plus it helps with debugging
+			document.title = "TIMER FINISHED";
+			if (level >= ADVANCED && destScene) {
+				window.obsstudio.setCurrentScene(destScene)
+			}
+		} else {
+			document.title = `Timer = ${hPart}:${mPart}:${secPart[0]}.${secPart[1]}`
 		}
 	}
 
