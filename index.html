@@ -187,8 +187,6 @@
 		+ (seconds * 1000);
 	let end = start + duration;
 
-	let interval = setInterval(updateClock, 1000 / 500);
-
 	function updateClock() {
 		let now = Date.now()
 		let delta = end - now;
@@ -211,6 +209,7 @@
 			}
 		} else {
 			document.title = `Timer = ${hPart}:${mPart}:${secPart[0]}.${secPart[1]}`
+			window.requestAnimationFrame(updateClock);
 		}
 	}
 
