@@ -193,13 +193,8 @@
 		let hPart = Math.max(0, (Math.floor(delta / 1000 / 60 / 60))).toString().padStart(2, '0');
 		let mPart = Math.max(0, (Math.floor(delta / 1000 / 60)) % 60).toString().padStart(2, '0');
 		let secPart = Math.max(0, (delta / 1000) % 60).toFixed(2).padStart(5, '0').split('.');
-
-		minutesSpan.innerText = mPart;
-		hoursSpan.innerText = hPart;
-		secondsSpan.innerText = secPart[0];
-		secondsFracSpan.innerText = '.' + secPart[1];
+	
 		if (now > end) {
-			clearInterval(interval);
 			clockDiv.classList.add("elapsed");
 
 			// OBS can actually hook into window titles externally, plus it helps with debugging
@@ -207,12 +202,21 @@
 			if (level >= ADVANCED && destScene) {
 				window.obsstudio.setCurrentScene(destScene)
 			}
+			minutesSpan.innerText = mPart;
+			hoursSpan.innerText = hPart;
+			secondsSpan.innerText = secPart[0];
+			secondsFracSpan.innerText = '.' + secPart[1];
 		} else {
+			minutesSpan.innerText = mPart;
+			hoursSpan.innerText = hPart;
+			secondsSpan.innerText = secPart[0];
+			secondsFracSpan.innerText = '.' + secPart[1];
 			window.requestAnimationFrame(updateClock);
 		}
 	}
 
 	updateClock();
+	window.requestAnimationFrame(updateClock);
 
 
 </script>
